@@ -1,6 +1,9 @@
+Flask
+
 .\venv\Scripts\Activate
 
 uvicorn app:app --reload
+<<<<<<< HEAD
 
 fastapi
 uvicorn
@@ -10,3 +13,5 @@ geopy
 
 
 pip install -r requirements.txt
+=======
+>>>>>>> de87ff094a4f277b913dff61f06d87859b0bec78
