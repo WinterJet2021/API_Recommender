@@ -1,3 +1,12 @@
 .\venv\Scripts\Activate
 
 uvicorn app:app --reload
+
+fastapi
+uvicorn
+pandas
+scikit-learn
+geopy
+
+
+pip install -r requirements.txt
