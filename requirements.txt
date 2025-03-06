@@ -15,3 +15,5 @@ python-dateutil
 pydantic-core
 anyio
 starlette
+scikit-learn
+geopy
