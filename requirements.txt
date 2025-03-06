@@ -1,3 +1,17 @@
 fastapi
 uvicorn
 pandas
+numpy
+pytz
+tzdata
+typing-extensions
+sniffio
+six
+idna
+h11
+click
+annotated-types
+python-dateutil
+pydantic-core
+anyio
+starlette
