@@ -1,0 +1,17 @@
+Hello
+
+.\venv\Scripts\Activate
+
+uvicorn app:app --reload
+
+
+------------------------------------------------------------------------------------------------------
+
+git status
+
+git add .
+
+git commit -m "A short description of the changes"
+
+git push origin master
+
