@@ -53,3 +53,4 @@ def recommend_users(user_id, top_n=5, location_filter=None):
     response = genai.chat(model="gemini-pro", messages=[{"role": "user", "content": prompt}])
 
     return response.last
+    
