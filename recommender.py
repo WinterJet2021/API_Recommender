@@ -49,10 +49,12 @@ def recommend_users(user_id, top_n=5, location_filter=None):
     - A short explanation for each match.
     """
 
-    # Call Gemini API (adjust the method based on correct API method)
-    try:
-        response = genai.generate(model="gemini-pro", prompt=prompt)  # This is an example, replace with the correct method.
-        return response
-    except Exception as e:
-        return {"error": str(e)}
+    # Use Gemini API (Corrected)
+    model = genai.GenerativeModel("gemini-pro")
+    response = model.generate_content(prompt)
 
+    # Extract response
+    if response and response.text:
+        return {"recommendations": response.text}
+    else:
+        return {"error": "No recommendations generated."}
