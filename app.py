@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
-from model import recommend_users
+from model import recommend_users as demo_recommend_users  # Import demo model
+from recommender import recommend_users as gemini_recommend_users  # Import Gemini-based recommender
 from typing import Optional
 
 app = FastAPI()
@@ -15,33 +16,28 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-# Define the request model
+# -------------------------
+# /recommend/ - Uses model.py (Demo Model)
+# -------------------------
+
 class RecommendRequest(BaseModel):
     user_id: int = Field(..., description="The unique ID of the user requesting recommendations")
     top_n: int = Field(5, ge=1, le=10, description="The number of recommendations to return (between 1 and 10)")
     location_filter: Optional[str] = Field(None, description="Optional filter to recommend users from a specific location")
 
-# Define a response model to standardize the responses
 class RecommendResponse(BaseModel):
     user_id: int
     recommendations: list
     message: str
 
-@app.get("/")
-def home():
-    return {"message": "Welcome to the Recommendation API!"}
-
 @app.post("/recommend/", response_model=RecommendResponse)
 def recommend(request: RecommendRequest):
     try:
-        # Call the recommend_users function to get recommendations
-        result = recommend_users(request.user_id, request.top_n, request.location_filter)
+        result = demo_recommend_users(request.user_id, request.top_n, request.location_filter)
 
-        # Check if there was an error in the result from the model
         if "error" in result:
             raise HTTPException(status_code=404, detail=result["error"])
 
-        # Construct a successful response
         recommendations = result.get("recommendations", [])
         message = "Successfully retrieved recommendations" if recommendations else "No recommendations found"
         return RecommendResponse(
@@ -50,6 +46,40 @@ def recommend(request: RecommendRequest):
             message=message
         )
     except Exception as e:
-        # Catch any unforeseen errors and return a generic error message
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
+# -------------------------
+# /match-users/ - Uses recommender.py (Gemini API)
+# -------------------------
+
+class MatchUsersRequest(BaseModel):
+    user_id: int = Field(..., description="The unique ID of the user requesting matches")
+    top_n: int = Field(5, ge=1, le=10, description="The number of matches to return (between 1 and 10)")
+    location_filter: Optional[str] = Field(None, description="Optional filter to match users from a specific location")
+
+class MatchUsersResponse(BaseModel):
+    user_id: int
+    matches: list
+    message: str
+
+@app.post("/match-users/", response_model=MatchUsersResponse)
+def match_users(request: MatchUsersRequest):
+    try:
+        result = gemini_recommend_users(request.user_id, request.top_n, request.location_filter)
+
+        if "error" in result:
+            raise HTTPException(status_code=404, detail=result["error"])
+
+        matches = result.get("recommendations", [])
+        message = "Matches found successfully" if matches else "No matches found"
+        return MatchUsersResponse(
+            user_id=request.user_id,
+            matches=matches,
+            message=message
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+@app.get("/")
+def home():
+    return {"message": "Welcome to the NomadSync API!"}
