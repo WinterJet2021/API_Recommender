@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from model import recommend_users as demo_recommend_users  # Import demo model
 from recommender import recommend_users as gemini_recommend_users  # Import Gemini-based recommender
 from typing import Optional
+import os
 
 app = FastAPI()
 
@@ -77,9 +78,19 @@ def match_users(request: MatchUsersRequest):
             matches=matches,
             message=message
         )
+    except ModuleNotFoundError as e:
+        return {"error": "Google Gemini API module is missing. Ensure `google-generativeai` is installed."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 @app.get("/")
 def home():
     return {"message": "Welcome to the NomadSync API!"}
+
+# -------------------------
+# Ensure Heroku Port Binding (Fixes R10 Boot Timeout)
+# -------------------------
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
