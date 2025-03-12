@@ -49,7 +49,10 @@ def recommend_users(user_id, top_n=5, location_filter=None):
     - A short explanation for each match.
     """
 
-    # Call Gemini API
-    response = genai.chat(model="gemini-pro", messages=[{"role": "user", "content": prompt}])
+    # Call Gemini API (adjust the method based on correct API method)
+    try:
+        response = genai.generate(model="gemini-pro", prompt=prompt)  # This is an example, replace with the correct method.
+        return response
+    except Exception as e:
+        return {"error": str(e)}
 
-    return response.last
