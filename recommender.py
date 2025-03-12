@@ -2,7 +2,7 @@ import google.generativeai as genai
 import pandas as pd
 
 # Configure Google Gemini API
-genai.configure(api_key="AIzaSyATtsrK61pPdCSpUeZRXlTee5TAePM6--M")
+genai.configure(api_key="AIzaSyATtsrK61pPdCSpUeZRXlTee5TAePM6--M")  # Replace with your actual API key
 
 # Load user data from CSV
 DATA_FILE = "user_interests_1000_dataset.csv"
@@ -33,6 +33,9 @@ def recommend_users(user_id, top_n=5, location_filter=None):
     if not user_profile:
         return {"error": "User not found"}
 
+    # Correct Model Name (Use the one from Step 1)
+    model_name = "models/gemini-1.5-pro"  # Change this based on your API response
+
     # Generate a recommendation prompt for Gemini API
     prompt = f"""
     Given the following user profile, find the top {top_n} most compatible users.
@@ -49,12 +52,16 @@ def recommend_users(user_id, top_n=5, location_filter=None):
     - A short explanation for each match.
     """
 
-    # Use Gemini API (Corrected)
-    model = genai.GenerativeModel("gemini-pro")
-    response = model.generate_content(prompt)
+    try:
+        # Use the correct Gemini model
+        model = genai.GenerativeModel(model_name)
+        response = model.generate_content(prompt)
 
-    # Extract response
-    if response and response.text:
-        return {"recommendations": response.text}
-    else:
-        return {"error": "No recommendations generated."}
+        # Extract response
+        if response and response.text:
+            return {"recommendations": response.text}
+        else:
+            return {"error": "No recommendations generated."}
+    
+    except Exception as e:
+        return {"error": f"Gemini API error: {str(e)}"}
