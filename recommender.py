@@ -1,8 +1,9 @@
 import google.generativeai as genai
 import pandas as pd
+import json  # Import JSON for proper parsing
 
 # Configure Google Gemini API
-genai.configure(api_key="AIzaSyATtsrK61pPdCSpUeZRXlTee5TAePM6--M")  # Replace with your actual API key
+genai.configure(api_key="AIzaSyATtsrK61pPdCSpUeZRXlTee5TAePM6--M")  # Ensure this is valid
 
 # Load user data from CSV
 DATA_FILE = "user_interests_1000_dataset.csv"
@@ -33,10 +34,10 @@ def recommend_users(user_id, top_n=5, location_filter=None):
     if not user_profile:
         return {"error": "User not found"}
 
-    # Correct Model Name (Use the one from Step 1)
-    model_name = "models/gemini-1.5-pro"  # Change this based on your API response
+    # Correct model name (Gemini API)
+    model_name = "gemini-1.5-pro"  # ✅ Fixed model name
 
-    # Generate a recommendation prompt for Gemini API
+    # Generate a recommendation prompt
     prompt = f"""
     Given the following user profile, find the top {top_n} most compatible users.
 
@@ -53,15 +54,29 @@ def recommend_users(user_id, top_n=5, location_filter=None):
     """
 
     try:
-        # Use the correct Gemini model
+        # Use Gemini API
         model = genai.GenerativeModel(model_name)
         response = model.generate_content(prompt)
 
-        # Extract response
         if response and response.text:
-            return {"recommendations": response.text}
+            try:
+                # Try parsing response as JSON
+                recommendations_json = json.loads(response.text)
+
+                # Check if the response contains a list of recommendations
+                if isinstance(recommendations_json, dict) and "recommendations" in recommendations_json:
+                    recommendations = recommendations_json["recommendations"]
+                elif isinstance(recommendations_json, list):
+                    recommendations = recommendations_json
+                else:
+                    recommendations = []  # Default to empty list if unexpected format
+
+                return {"recommendations": recommendations}
+
+            except json.JSONDecodeError:
+                return {"error": "Invalid JSON response from Gemini API."}
         else:
             return {"error": "No recommendations generated."}
-    
+
     except Exception as e:
         return {"error": f"Gemini API error: {str(e)}"}
