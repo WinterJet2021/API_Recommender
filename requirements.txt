@@ -17,3 +17,4 @@ anyio
 starlette
 scikit-learn
 geopy
+google-generativeai
