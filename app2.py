@@ -52,3 +52,9 @@ def match_users(request: MatchUsersRequest):
 @app.get("/")
 def home():
     return {"message": "Welcome to the NomadSync Matchmaking API!"}
+
+if __name__ == "__main__":
+    import uvicorn
+    import os
+    port = int(os.environ.get("PORT", 8000))  # Use Heroku's dynamically assigned port
+    uvicorn.run(app, host="0.0.0.0", port=port, workers=1)
