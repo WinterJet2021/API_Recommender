@@ -6,22 +6,22 @@ from typing import Optional
 
 app = FastAPI()
 
-# CORS Configuration - Allow all origins for testing
+# CORS Configuration - Restricting to specific domains for production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://your-wordpress-domain.com"],  # Specify your WordPress domain for production
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
+    allow_headers=["*"],  # Allow all headers
 )
 
-# Define request model
+# Define the request model
 class RecommendRequest(BaseModel):
     user_id: int = Field(..., description="The unique ID of the user requesting recommendations")
     top_n: int = Field(5, ge=1, le=10, description="The number of recommendations to return (between 1 and 10)")
     location_filter: Optional[str] = Field(None, description="Optional filter to recommend users from a specific location")
 
-# Define response model
+# Define a response model to standardize the responses
 class RecommendResponse(BaseModel):
     user_id: int
     recommendations: list
@@ -34,16 +34,22 @@ def home():
 @app.post("/recommend/", response_model=RecommendResponse)
 def recommend(request: RecommendRequest):
     try:
+        # Call the recommend_users function to get recommendations
         result = recommend_users(request.user_id, request.top_n, request.location_filter)
 
+        # Check if there was an error in the result from the model
         if "error" in result:
             raise HTTPException(status_code=404, detail=result["error"])
 
+        # Construct a successful response
+        recommendations = result.get("recommendations", [])
+        message = "Successfully retrieved recommendations" if recommendations else "No recommendations found"
         return RecommendResponse(
             user_id=request.user_id,
-            recommendations=result.get("recommendations", []),
-            message="Successfully retrieved recommendations"
+            recommendations=recommendations,
+            message=message
         )
-
     except Exception as e:
+        # Catch any unforeseen errors and return a generic error message
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+

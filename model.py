@@ -1,34 +1,30 @@
 import pandas as pd
+import random
+from sklearn.metrics.pairwise import cosine_similarity
+from geopy.distance import geodesic
+from sklearn.preprocessing import MinMaxScaler
 
 # Load dataset
-df = pd.read_csv("user_interests_1000_dataset.csv")
+file_path = "user_interests_500_dataset.csv"  # Adjust the path if needed
+df_users = pd.read_csv(file_path)
 
-def recommend_users(user_id: int, top_n: int = 5, location_filter: str = None):
-    """
-    Generate recommendations based on user interests.
+# Normalize user interest data
+activity_columns = ["Basketball", "Yoga", "Hiking", "Cycling", "Gym", "Swimming", "Dancing", "Running", "Music", "Photography"]
+scaler = MinMaxScaler()
+df_users_scaled = df_users.copy()
+df_users_scaled[activity_columns] = scaler.fit_transform(df_users[activity_columns])
 
-    Args:
-    - user_id (int): The ID of the user requesting recommendations.
-    - top_n (int): The number of recommendations to return.
-    - location_filter (str): Optional location-based filter.
+# Define recommendation function
+def recommend_users(user_id, top_n=5):
+    if user_id not in df_users_scaled["UserID"].values:
+        return {"error": "User ID not found"}
 
-    Returns:
-    - dict: A dictionary with recommendations or an error message.
-    """
-    if user_id not in df['user_id'].values:
-        return {"error": "User ID not found in the dataset"}
-
-    # Filter by location if provided
-    if location_filter:
-        filtered_df = df[df['location'] == location_filter]
-    else:
-        filtered_df = df
-
-    # Recommend users with the most similar interests (simple matching)
-    user_interests = df[df['user_id'] == user_id].iloc[0, 1:]  # Exclude user_id column
-    filtered_df['similarity'] = filtered_df.iloc[:, 1:].apply(lambda row: (user_interests == row).sum(), axis=1)
-
-    # Get top N recommendations excluding the user themselves
-    recommendations = filtered_df[filtered_df['user_id'] != user_id].nlargest(top_n, 'similarity')['user_id'].tolist()
-
-    return {"recommendations": recommendations}
+    user_data = df_users_scaled[df_users_scaled["UserID"] == user_id][activity_columns]
+    other_users = df_users_scaled[df_users_scaled["UserID"] != user_id][activity_columns]
+    
+    similarity_scores = cosine_similarity(user_data, other_users)
+    similar_users_indices = similarity_scores.argsort()[0][-top_n:][::-1]
+    
+    recommended_users = df_users_scaled.iloc[similar_users_indices]["UserID"].tolist()
+    
+    return {"user_id": user_id, "recommendations": recommended_users}
