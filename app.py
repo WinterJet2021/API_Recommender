@@ -52,4 +52,3 @@ def recommend(request: RecommendRequest):
     except Exception as e:
         # Catch any unforeseen errors and return a generic error message
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-
