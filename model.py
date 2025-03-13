@@ -1,61 +1,34 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-from fastapi.middleware.cors import CORSMiddleware
-from model import recommend_users
-from typing import Optional
-import os
+import pandas as pd
 
-app = FastAPI()
+# Load dataset
+df = pd.read_csv("user_interests_1000_dataset.csv")
 
-# CORS Configuration - Allowing requests from your domain
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://digitalnomadsync.com"],
-    allow_credentials=True,
-    allow_methods=["*"],  
-    allow_headers=["*"],  
-)
+def recommend_users(user_id: int, top_n: int = 5, location_filter: str = None):
+    """
+    Generate recommendations based on user interests.
 
-# Define the request model
-class RecommendRequest(BaseModel):
-    user_id: int = Field(..., description="The unique ID of the user requesting recommendations")
-    top_n: int = Field(5, ge=1, le=10, description="The number of recommendations to return (between 1 and 10)")
-    location_filter: Optional[str] = Field(None, description="Optional filter to recommend users from a specific location")
+    Args:
+    - user_id (int): The ID of the user requesting recommendations.
+    - top_n (int): The number of recommendations to return.
+    - location_filter (str): Optional location-based filter.
 
-# Define a response model to standardize the responses
-class RecommendResponse(BaseModel):
-    user_id: int
-    recommendations: list
-    message: str
+    Returns:
+    - dict: A dictionary with recommendations or an error message.
+    """
+    if user_id not in df['user_id'].values:
+        return {"error": "User ID not found in the dataset"}
 
-@app.get("/")
-def home():
-    return {"message": "Welcome to the Recommendation API!"}
+    # Filter by location if provided
+    if location_filter:
+        filtered_df = df[df['location'] == location_filter]
+    else:
+        filtered_df = df
 
-@app.post("/recommend/", response_model=RecommendResponse)
-def recommend(request: RecommendRequest):
-    try:
-        # Call the recommend_users function to get recommendations
-        result = recommend_users(request.user_id, request.top_n, request.location_filter)
+    # Recommend users with the most similar interests (simple matching)
+    user_interests = df[df['user_id'] == user_id].iloc[0, 1:]  # Exclude user_id column
+    filtered_df['similarity'] = filtered_df.iloc[:, 1:].apply(lambda row: (user_interests == row).sum(), axis=1)
 
-        # Check if there was an error in the result from the model
-        if "error" in result:
-            raise HTTPException(status_code=404, detail=result["error"])
+    # Get top N recommendations excluding the user themselves
+    recommendations = filtered_df[filtered_df['user_id'] != user_id].nlargest(top_n, 'similarity')['user_id'].tolist()
 
-        # Construct a successful response
-        recommendations = result.get("recommendations", [])
-        message = "Successfully retrieved recommendations" if recommendations else "No recommendations found"
-        return RecommendResponse(
-            user_id=request.user_id,
-            recommendations=recommendations,
-            message=message
-        )
-    except Exception as e:
-        # Catch any unforeseen errors and return a generic error message
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-
-# Ensure Heroku Port Binding
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    return {"recommendations": recommendations}
