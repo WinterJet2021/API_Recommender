@@ -1,15 +1,15 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
-from model import recommend_users  # Import the function from model.py
+from model import recommend_users  # Import function from model.py
 from typing import Optional
 
 app = FastAPI()
 
-# CORS Configuration - Allow all domains for now
+# CORS Configuration - Allow all origins for testing
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -21,7 +21,7 @@ class RecommendRequest(BaseModel):
     top_n: int = Field(5, ge=1, le=10, description="The number of recommendations to return (between 1 and 10)")
     location_filter: Optional[str] = Field(None, description="Optional filter to recommend users from a specific location")
 
-# Define a response model
+# Define the response model
 class RecommendResponse(BaseModel):
     user_id: int
     recommendations: list
