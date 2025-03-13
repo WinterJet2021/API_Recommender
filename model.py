@@ -5,7 +5,7 @@ from geopy.distance import geodesic
 from sklearn.preprocessing import MinMaxScaler
 
 # Load dataset
-file_path = "user_interests_500_dataset.csv"  # Adjust the path if needed
+file_path = "user_interests_1000_dataset.csv"  # Adjust the path if needed
 df_users = pd.read_csv(file_path)
 
 # Normalize user interest data
